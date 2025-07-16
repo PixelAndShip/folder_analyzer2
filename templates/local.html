@@ -5,128 +5,168 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
     <style>
-        body { background: #051629; font-family: Michroma; padding: 30px; }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
+        body { background: #051629; font-family: Michroma; padding: 30px; color: white; }
+        .top-bar { margin-bottom: 20px; }
+        form label { font-weight: bold; }
+        .col {
+            float: left; margin-right: 40px; background: #fff; padding: 20px;
+            border-radius: 5px; box-shadow: 0 0 5px #aaa; min-width: 300px; color: black;
         }
-        .left-form {
-            /* Keep form styling as is */
-        }
-        .pricing {
-            background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 5px #aaa;
-            width: 200px;
-            font-size: 14px;
-            line-height: 1.5;
-            
-        }
-        
         .file { border-bottom: 2px solid blue; }
-        .col { float: left; margin-right: 40px; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 5px #aaa; }
         .icon { margin-right: 5px; }
-        a { text-decoration: none; color: inherit; text-decoration: underline; text-decoration-color: yellow;}
+        a { text-decoration: underline; color: #183fff; }
+        .col-calculator {
+            padding: 10px;
+            background: #e6f4c4;
+            margin-bottom: 10px;
+            color: #191919;
+            border-radius: 4px;
+        }
+
+        /* Settings bar styling (your previous) */
+        #toggle-settings {
+            position: fixed; 
+            top: 20px; 
+            right: 20px;
+            z-index: 1001;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        #settings-bar {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            padding: 20px;
+            max-height: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: max-height 0.5s ease, padding 0.5s ease;
+            z-index: 1000;
+            color: black;
+            width: 220px;
+        }
     </style>
 </head>
-
-
-
 <body>
-<button id="toggle-settings" style="
-  position: fixed; 
-  top: 20px; 
-  right: 20px; 
-  z-index: 1001;
-  color: 
-">⚙️ Settings</button>
-<div id="settings-bar" style="
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.8); /* transparent */
-  border-radius: 5px;
-  padding: 20px;
-  max-height: 0;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  transition: max-height 0.5s ease, padding 0.5s ease;
-  z-index: 1000;
-">
-  <h3>Settings</h3>
-  <label>Page Background: <input type="color" id="pageBgColor"></label><br><br>
-  <label>Text Color: <input type="color" id="textColor"></label><br><br>
-  <label>Section Background: <input type="color" id="sectionBgColor"></label>
-</div>
-
-
-
+    <!-- Settings toggle -->
+    <button id="toggle-settings">⚙️ Settings</button>
+    <div id="settings-bar">
+        <h3>Settings</h3>
+        <label>Page Background: <input type="color" id="pageBgColor"></label><br><br>
+        <label>Text Color: <input type="color" id="textColor"></label><br><br>
+        <label>Section Background: <input type="color" id="sectionBgColor"></label>
+    </div>
 
     <h1>Local Folder Analyzer</h1>
     <div class="top-bar">
-        <div class="left-form">
-            <form method="GET" action="/local">
-                Base Path: <input name="base" value="{{ base or '' }}" size="50"><br><br>
-                Folder to Analyze: <input name="folder" value="{{ folder or '' }}" size="50"><br><br>
-                Video Count Price: <input name="video_price" value="{{ video_price or 0 }}" size="10"> $ per video<br><br>
-                Minute Price: <input name="minute_price" value="{{ minute_price or 0 }}" size="10"> $ per minute<br><br>
-                <button type="submit">Analyze</button>
-            </form>
-        </div>
+        <form method="GET" action="/local">
+            <label>Folder Path: 
+                <input name="root" value="{{ root or '' }}" size="60" required>
+            </label><br><br>
 
-        <div class="pricing">
-            <h3>Pricing</h3>
-            <p>Total videos: {{ total_videos }}</p>
-            <p>Total minutes: {{ total_minutes }}</p>
-            <p>Video Count Total: {{ (total_videos * video_price) | round(2) }} $</p>
-            <p>Minute Count Total: {{ (total_minutes * minute_price) | round(2) }} $</p>
-        </div>
+            Video Count Price: 
+            <input name="video_price" value="{{ video_price or 0 }}" size="10" type="number" step="0.01" min="0">
+            $ / video &nbsp;&nbsp;
+            Minute Price:
+            <input name="minute_price" value="{{ minute_price or 0 }}" size="10" type="number" step="0.01" min="0">
+            $ / minute
+            <br><br>
+            <button type="submit">Analyze</button>
+        </form>
     </div>
 
     {% if error %}
-    <p style="color:red;">{{ error }}</p>
+        <p style="color:red;">{{ error }}</p>
     {% endif %}
 
     {% if columns %}
-    <div style="overflow:auto; margin-top:30px;">
-        {% for col in columns %}
-        <div class="col">
-            {% for item in col %}
-                {% if item.type == 'folder' %}
-                    <div>
-                        <span class="icon">📁</span>
-                        
-                        <a href="/local?base={{ base }}&folder={{ item.rel_path }}&video_price={{ video_price }}&minute_price={{ minute_price }}">
-                            <span class="folder">{{ item.name }}</span>
-                        </a><br>
-                        {{ item.count }} items — {{ item.modified }}
-                    </div><br>
-                {% else %}
-                    <div><span class="icon">📼</span><span class="file">{{ item.name }}</span><br>
-                    {{ item.duration }} — {{ item.modified }}</div><br>
+        <div style="overflow:auto; margin-top: 30px;">
+            {% for col in columns %}
+            <div class="col">
+                {# Only show calculator for folder columns except root #}
+                {% if not loop.first %}
+                    {% set folder_vcount = 0 %}
+                    {% set folder_seconds = 0 %}
+                    {% for item in col %}
+                        {% if item.type == 'file' %}
+                            {% set folder_vcount = folder_vcount + 1 %}
+                            {% set folder_seconds = folder_seconds + item.seconds %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set folder_minutes = (folder_seconds // 60) %}
+                    
                 {% endif %}
+
+                {% for item in col %}
+                    {% if item.type == 'folder' %}
+                        <div style="margin-bottom: 1em;">
+                          <span class="icon">📁</span>
+                          <a href="/local?root={{ item.abs_path | urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}" style="font-family: inherit; color: inherit;">
+                              {{ item.name }}
+                          </a><br>
+                          {{ item.count }} items — {{ item.modified }}
+
+                          {# Calculator for this folder #}
+                          {% set folder_minutes = (item.total_seconds // 60) %}
+                          <div style="
+                              margin-left: 20px;
+                              font-family: inherit;  /* inherit font, so settings apply */
+                              color: inherit;        /* inherit text color */
+                              font-size: 0.9em;
+                              margin-top: 0.3em;
+                              ">
+                            Videos: {{ item.total_videos }}<br>
+                            Minutes: {{ folder_minutes }}<br>
+
+                            Video Price: <input 
+                                type="number" 
+                                min="0" step="0.01" 
+                                value="{{ video_price }}" 
+                                class="folder-video-price" 
+                                style="width: 60px;"
+                            > $<br>
+
+                            Minute Price: <input 
+                                type="number" 
+                                min="0" step="0.01" 
+                                value="{{ minute_price }}" 
+                                class="folder-minute-price" 
+                                style="width: 60px;"
+                            > $<br>
+
+                            <div>
+                              Total Video Price: <span class="total-video-price">{{ (item.total_videos * video_price)|round(2) }}</span> $<br>
+                              Total Minute Price: <span class="total-minute-price">{{ (folder_minutes * minute_price)|round(2) }}</span> $
+                            </div>
+                          </div>
+                        </div>
+                      {% else %}
+                        <!-- file rendering as before -->
+                      {% endif %}
+
+
+                {% endfor %}
+            </div>
             {% endfor %}
         </div>
-        {% endfor %}
-    </div>
     {% endif %}
 
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('toggle-settings');
     const settingsBar = document.getElementById('settings-bar');
 
     toggleBtn.addEventListener('click', () => {
-      if (settingsBar.style.maxHeight === '0px' || !settingsBar.style.maxHeight) {
-        settingsBar.style.maxHeight = '500px'; // adjust as needed
-        settingsBar.style.padding = '20px';
-      } else {
-        settingsBar.style.maxHeight = '0';
-        settingsBar.style.padding = '0 20px';
-      }
+        if (settingsBar.style.maxHeight === '0px' || !settingsBar.style.maxHeight) {
+            settingsBar.style.maxHeight = '500px';
+            settingsBar.style.padding = '20px';
+        } else {
+            settingsBar.style.maxHeight = '0';
+            settingsBar.style.padding = '0 20px';
+        }
     });
 
     const pageBgInput = document.getElementById('pageBgColor');
@@ -134,40 +174,74 @@
     const sectionBgInput = document.getElementById('sectionBgColor');
 
     function loadColors() {
-      const savedPageBg = localStorage.getItem('pageBgColor') || '#051629';
-      const savedTextColor = localStorage.getItem('textColor') || '#ffffff';
-      const savedSectionBg = localStorage.getItem('sectionBgColor') || '#ffffff';
+        const savedPageBg = localStorage.getItem('pageBgColor') || '#051629';
+        const savedTextColor = localStorage.getItem('textColor') || '#ffffff';
+        const savedSectionBg = localStorage.getItem('sectionBgColor') || '#ffffff';
 
-      pageBgInput.value = savedPageBg;
-      textColorInput.value = savedTextColor;
-      sectionBgInput.value = savedSectionBg;
+        pageBgInput.value = savedPageBg;
+        textColorInput.value = savedTextColor;
+        sectionBgInput.value = savedSectionBg;
 
-      updateColors();
+        updateColors();
     }
 
     function saveColors() {
-      localStorage.setItem('pageBgColor', pageBgInput.value);
-      localStorage.setItem('textColor', textColorInput.value);
-      localStorage.setItem('sectionBgColor', sectionBgInput.value);
+        localStorage.setItem('pageBgColor', pageBgInput.value);
+        localStorage.setItem('textColor', textColorInput.value);
+        localStorage.setItem('sectionBgColor', sectionBgInput.value);
     }
 
     function updateColors() {
-      document.body.style.backgroundColor = pageBgInput.value;
-      document.body.style.color = textColorInput.value;
+        document.body.style.backgroundColor = pageBgInput.value;
+        document.body.style.color = textColorInput.value;
 
-      document.querySelectorAll('.col, .pricing, #settings-bar').forEach(el => {
-        el.style.backgroundColor = sectionBgInput.value + 'CC'; // 80% opacity
-        el.style.color = textColorInput.value;
-      });
+        document.querySelectorAll('.col, #settings-bar').forEach(el => {
+            el.style.backgroundColor = sectionBgInput.value + 'CC'; // 80% opacity
+            el.style.color = textColorInput.value;
+        });
 
-      saveColors();
+        saveColors();
     }
 
     pageBgInput.addEventListener('input', updateColors);
     textColorInput.addEventListener('input', updateColors);
     sectionBgInput.addEventListener('input', updateColors);
 
-    loadColors();
+    window.addEventListener('DOMContentLoaded', loadColors);
+</script>
+<script>
+  // When inputs change, update total prices accordingly
+  document.querySelectorAll('.col').forEach(col => {
+    col.querySelectorAll('div > input.folder-video-price, div > input.folder-minute-price').forEach(input => {
+      input.addEventListener('input', () => {
+        // find the containing calculator div
+        const calculatorDiv = input.parentElement;
+
+        // Get video count and minutes from the DOM text
+        // Here, we get sibling text nodes for Video count and Minutes:
+        const videosText = calculatorDiv.childNodes[0].textContent || "";
+        const minutesText = calculatorDiv.childNodes[2].textContent || "";
+
+        // Extract numbers from these strings
+        const videoCount = parseInt(videosText.replace(/[^0-9]/g, '')) || 0;
+        const minutes = parseInt(minutesText.replace(/[^0-9]/g, '')) || 0;
+
+        // Read price values from inputs exactly inside this div
+        const videoPriceInput = calculatorDiv.querySelector('input.folder-video-price');
+        const minutePriceInput = calculatorDiv.querySelector('input.folder-minute-price');
+
+        const videoPrice = parseFloat(videoPriceInput.value) || 0;
+        const minutePrice = parseFloat(minutePriceInput.value) || 0;
+
+        // Calculate totals
+        const totalVideoPrice = (videoCount * videoPrice).toFixed(2);
+        const totalMinutePrice = (minutes * minutePrice).toFixed(2);
+
+        // Update total price spans
+        calculatorDiv.querySelector('.total-video-price').textContent = totalVideoPrice;
+        calculatorDiv.querySelector('.total-minute-price').textContent = totalMinutePrice;
+      });
+    });
   });
 </script>
 

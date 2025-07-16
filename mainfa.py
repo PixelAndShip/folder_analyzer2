@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect
 from pathlib import Path
-from datetime import datetime
-from moviepy import VideoFileClip
 from column_tree import build_tree, flatten_tree
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -11,38 +10,29 @@ def index():
 
 @app.route('/local', methods=['GET'])
 def local():
-    error = None
-    columns = []
-    total_videos = 0
-    total_minutes = 0
-
-    base = request.args.get('base', '').strip()
-    folder = request.args.get('folder', '').strip()
+    # SINGLE input field for path called 'root'
+    root = request.args.get('root', '').strip()
     video_price = float(request.args.get('video_price') or 0)
     minute_price = float(request.args.get('minute_price') or 0)
+    error = None
+    columns = []
+    abs_root = None
 
-    if base and folder:
-        path = Path(base) / folder
-    elif base:
-        path = Path(base)
-    else:
-        path = None
-
-    if path:
-        if not path.is_dir():
+    if root:
+        abs_root = Path(root)
+        if not abs_root.exists() or not abs_root.is_dir():
             error = "Invalid path."
+            abs_root = None
         else:
-            tree = build_tree(path, base)
-            columns, total_videos, total_minutes = flatten_tree(tree)
+            # Pass both 'path' and 'base' to keep relative paths for links
+            tree = build_tree(abs_root, abs_root)
+            columns = flatten_tree(tree)
 
     return render_template(
         'local.html',
-        base=base,
-        folder=folder,
-        error=error,
+        root=root,
         columns=columns,
-        total_videos=total_videos,
-        total_minutes=total_minutes,
+        error=error,
         video_price=video_price,
         minute_price=minute_price
     )
