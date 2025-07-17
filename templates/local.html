@@ -12,7 +12,12 @@
             float: left; margin-right: 40px; background: #fff; padding: 20px;
             border-radius: 5px; box-shadow: 0 0 5px #aaa; min-width: 300px; color: black;
         }
-        .file { border-bottom: 2px solid blue; }
+        .file { 
+            border-bottom: 1px solid #aaa; 
+            padding: 5px 0; 
+            font-size: 0.9em; 
+            margin-left: 20px;
+        }
         .icon { margin-right: 5px; }
         a { text-decoration: underline; color: #183fff; }
         .col-calculator {
@@ -22,8 +27,7 @@
             color: #191919;
             border-radius: 4px;
         }
-
-        /* Settings bar styling (your previous) */
+        /* Settings bar styling */
         #toggle-settings {
             position: fixed; 
             top: 20px; 
@@ -49,34 +53,41 @@
             color: black;
             width: 220px;
         }
+        .folder-nav {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
     <!-- Settings toggle -->
-    <button id="toggle-settings">⚙️ Settings</button>
+    <button id="toggle-settings">⚙️</button>
     <div id="settings-bar">
-        <h3>Settings</h3>
-        <label>Page Background: <input type="color" id="pageBgColor"></label><br><br>
-        <label>Text Color: <input type="color" id="textColor"></label><br><br>
-        <label>Section Background: <input type="color" id="sectionBgColor"></label>
+    <h3>Settings</h3>
+    <label>Page Background: <input type="color" id="pageBgColor"></label><br><br>
+    <label>Text Color: <input type="color" id="textColor"></label><br><br>
+    <label>Section Background: <input type="color" id="sectionBgColor"></label><br><br>
+    <button id="exit-btn" style="margin-top:12px;width:100%;">⛔ Exit App</button>
     </div>
+
 
     <h1>Local Folder Analyzer</h1>
     <div class="top-bar">
         <form method="GET" action="/local">
-            <label>Folder Path: 
+            <label>Root folder:
                 <input name="root" value="{{ root or '' }}" size="60" required>
-            </label><br><br>
-
-            Video Count Price: 
-            <input name="video_price" value="{{ video_price or 0 }}" size="10" type="number" step="0.01" min="0">
-            $ / video &nbsp;&nbsp;
-            Minute Price:
-            <input name="minute_price" value="{{ minute_price or 0 }}" size="10" type="number" step="0.01" min="0">
-            $ / minute
-            <br><br>
+            </label>
+            <input type="hidden" name="folder" value="{{ current_folder or '' }}">
+            
             <button type="submit">Analyze</button>
         </form>
+        <div class="folder-nav">
+            {% if current_folder %}
+                <b>Current:</b> /{{ current_folder }}
+                {# Show go up link unless at root #}
+                {% set upfolder = current_folder.rsplit('/', 1)[0] if '/' in current_folder else '' %}
+                (<a href="/local?root={{ root|urlencode }}&folder={{ upfolder|urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}">⬅️ Up</a>)
+            {% endif %}
+        </div>
     </div>
 
     {% if error %}
@@ -98,30 +109,27 @@
                         {% endif %}
                     {% endfor %}
                     {% set folder_minutes = (folder_seconds // 60) %}
-                    
                 {% endif %}
 
                 {% for item in col %}
                     {% if item.type == 'folder' %}
                         <div style="margin-bottom: 1em;">
                           <span class="icon">📁</span>
-                          <a href="/local?root={{ item.abs_path | urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}" style="font-family: inherit; color: inherit;">
+                          <a href="/local?root={{ root|urlencode }}&folder={{ item.rel_path|urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}" style="font-family: inherit; color: inherit;">
                               {{ item.name }}
                           </a><br>
-                          {{ item.count }} items — {{ item.modified }}
+                          {{ item.count }} items{% if item.modified %} — {{ item.modified }}{% endif %}
 
                           {# Calculator for this folder #}
                           {% set folder_minutes = (item.total_seconds // 60) %}
                           <div style="
                               margin-left: 20px;
-                              font-family: inherit;  /* inherit font, so settings apply */
-                              color: inherit;        /* inherit text color */
+                              font-family: inherit;
+                              color: inherit;
                               font-size: 0.9em;
-                              margin-top: 0.3em;
-                              ">
+                              margin-top: 0.3em;">
                             Videos: {{ item.total_videos }}<br>
                             Minutes: {{ folder_minutes }}<br>
-
                             Video Price: <input 
                                 type="number" 
                                 min="0" step="0.01" 
@@ -129,7 +137,6 @@
                                 class="folder-video-price" 
                                 style="width: 60px;"
                             > $<br>
-
                             Minute Price: <input 
                                 type="number" 
                                 min="0" step="0.01" 
@@ -137,18 +144,17 @@
                                 class="folder-minute-price" 
                                 style="width: 60px;"
                             > $<br>
-
                             <div>
                               Total Video Price: <span class="total-video-price">{{ (item.total_videos * video_price)|round(2) }}</span> $<br>
                               Total Minute Price: <span class="total-minute-price">{{ (folder_minutes * minute_price)|round(2) }}</span> $
                             </div>
                           </div>
                         </div>
-                      {% else %}
-                        <!-- file rendering as before -->
-                      {% endif %}
-
-
+                    {% elif item.type == 'file' %}
+                        <div class="file">
+                            🎬 {{ item.name }} — {{ item.duration }}{% if item.modified %} — {{ item.modified }}{% endif %}
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
             {% endfor %}
@@ -218,7 +224,6 @@
         const calculatorDiv = input.parentElement;
 
         // Get video count and minutes from the DOM text
-        // Here, we get sibling text nodes for Video count and Minutes:
         const videosText = calculatorDiv.childNodes[0].textContent || "";
         const minutesText = calculatorDiv.childNodes[2].textContent || "";
 
@@ -237,13 +242,19 @@
         const totalVideoPrice = (videoCount * videoPrice).toFixed(2);
         const totalMinutePrice = (minutes * minutePrice).toFixed(2);
 
-        // Update total price spans
         calculatorDiv.querySelector('.total-video-price').textContent = totalVideoPrice;
         calculatorDiv.querySelector('.total-minute-price').textContent = totalMinutePrice;
       });
     });
   });
 </script>
-
+<script>
+document.getElementById('exit-btn').onclick = function() {
+    if (confirm("Really shut down the Folder Analyzer app?")) {
+        fetch('/shutdown', {method: 'POST'})
+        .then(() => { window.close(); });
+    }
+};
+</script>
 </body>
 </html>

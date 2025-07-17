@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+    <title>Video Folder Analyzer</title>
+</head>
+<body>
+    <h1>Browse: /{{ folder }}</h1>
+    {% if parent %}
+      <a href="{{ url_for('browse', folder=parent) }}">⬅️ Go Up</a><br/>
+    {% endif %}
+    <h3>Subfolders:</h3>
+    <ul>
+    {% for sub in child_folders %}
+      <li>
+        <a href="{{ url_for('browse', folder=folder ~ '/' ~ sub if folder else sub) }}">{{ sub }}</a>
+      </li>
+    {% else %}
+      <li>No subfolders</li>
+    {% endfor %}
+    </ul>
+
+    <h3>Files:</h3>
+    <ul>
+    {% for name, rel_path, duration, mtime in files %}
+        <li>{{ name }} ({{ duration//60 }}m {{ duration%60 }}s) - 
+            {{ mtime|datetimeformat}}
+        </li>
+    {% else %}
+        <li>No .mp4 files in this folder</li>
+    {% endfor %}
+    </ul>
+
+    <div>
+        <b>Stats for "{{ folder or "/" }}":</b><br>
+        Total videos: {{ vcount }}<br>
+        Total minutes: {{ minutes }}<br>
+        <form method="get" action="{{ url_for('browse') }}">
+            <input type="hidden" name="folder" value="{{ folder }}">
+            Video Price: <input type="number" step="0.01" name="video_price" value="{{ video_price }}"> USD<br>
+            Minute Price: <input type="number" step="0.01" name="minute_price" value="{{ minute_price }}"> USD<br>
+            <button type="submit">Update Price</button>
+        </form>
+        <div>
+            Total video price: {{ (video_price * vcount)|round(2) }} USD<br>
+            Total minutes price: {{ (minute_price * minutes)|round(2) }} USD<br>
+        </div>
+    </div>
+</body>
+</html>
