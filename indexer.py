@@ -2,7 +2,7 @@ import sqlite3
 import os
 import time
 from pathlib import Path
-from utils import get_mp4_duration_in_seconds
+from media_utils import get_mp4_duration_in_seconds
 
 DB_PATH = "media_index.db"
 
