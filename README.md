@@ -34,7 +34,7 @@ Folder Analyzer Pixelated is a python application that analyzes the user entered
 
 ## Future developments
 
-It is intended to make a google drive version for the application using a format similar to the local one.
+It is intended to make a google drive version for the application using a format similar to the local one. Said version will be a paid product.
 
 ## Contributing
 
