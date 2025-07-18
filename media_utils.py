@@ -4,7 +4,14 @@ import subprocess
 from pathlib import Path
 import datetime
 
-DB_PATH = 'media_index.db'
+
+# Place DB in run folder
+DB_PATH = os.path.abspath("media_index.db")
+
+# Make sure directory exists if needed
+db_dir = os.path.dirname(DB_PATH)
+if db_dir and not os.path.exists(db_dir):
+    os.makedirs(db_dir, exist_ok=True)
 
 def get_mp4_duration_in_seconds(filepath):
     try:
