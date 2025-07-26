@@ -1,260 +1,557 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
-    <style>
-        body { background: #051629; font-family: Michroma; padding: 30px; color: white; }
-        .top-bar { margin-bottom: 20px; }
-        form label { font-weight: bold; }
-        .col {
-            float: left; margin-right: 40px; background: #fff; padding: 20px;
-            border-radius: 5px; box-shadow: 0 0 5px #aaa; min-width: 300px; color: black;
-        }
-        .file { 
-            border-bottom: 1px solid #aaa; 
-            padding: 5px 0; 
-            font-size: 0.9em; 
-            margin-left: 20px;
-        }
-        .icon { margin-right: 5px; }
-        a { text-decoration: underline; color: #183fff; }
-        .col-calculator {
-            padding: 10px;
-            background: #e6f4c4;
-            margin-bottom: 10px;
-            color: #191919;
-            border-radius: 4px;
-        }
-        /* Settings bar styling */
-        #toggle-settings {
-            position: fixed; 
-            top: 20px; 
-            right: 20px;
-            z-index: 1001;
-            background: transparent;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        #settings-bar {
-            position: fixed;
-            top: 60px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 5px;
-            padding: 20px;
-            max-height: 0;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: max-height 0.5s ease, padding 0.5s ease;
-            z-index: 1000;
-            color: black;
-            width: 220px;
-        }
-        .folder-nav {
-            margin-bottom: 15px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Local Folder Analyzer with Grid & Calculators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet" />
+<style>
+    :root {
+        --page-bg: #051629;
+        --col1-bg: #f0f0f0cc;
+        --col2-bg: #ffffffcc;
+        --col3-bg: #ffffffcc;
+        --text-color: white;
+        --text-color-column: black;
+        --calculator-bg: #ffffff;
+        --calculator-text-color: black;
+        --item-text-color: black;
+    }
+
+    body {
+        margin: 0;
+        padding: 30px;
+        font-family: Michroma, monospace;
+        background-color: var(--page-bg);
+        color: var(--text-color);
+        box-sizing: border-box;
+    }
+    a {
+        color: #183fff;
+        text-decoration: underline;
+    }
+    a:hover {
+        text-decoration: none;
+    }
+    small {
+        font-size: 0.8em;
+        color: #666;
+        margin-left: 6px;
+    }
+    h1 {
+        margin-bottom: 1rem;
+    }
+    form label {
+        font-weight: bold;
+    }
+
+    /* Folder column backgrounds and text */
+    .folder-info {
+        background-color: var(--col1-bg);
+        color: var(--text-color-column);
+    }
+    .folder-subcontents {
+        background-color: var(--col2-bg);
+        color: var(--text-color-column);
+    }
+    .folder-subsubcontents {
+        background-color: var(--col3-bg);
+        color: var(--text-color-column);
+    }
+
+    .folders-container {
+        max-height: 80vh;
+        overflow-y: auto;
+        display: grid;
+        /* Adjusted to make first column wider */
+        grid-auto-rows: minmax(320px, auto);
+        gap: 20px 0;
+    }
+
+    .folder-row {
+        display: grid;
+        /* Wider first column */
+        grid-template-columns: 1.4fr 1.8fr 2fr;
+        gap: 15px;
+        border-radius: 6px;
+        padding: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        font-family: Michroma, monospace;
+        align-items: start;
+    }
+
+    /* Fix height and scrolling behavior for folder sections */
+    .folder-info, .folder-subcontents, .folder-subsubcontents {
+        border-radius: 6px;
+        padding: 10px;
+        overflow-y: auto;
+        min-height: 320px;
+        max-height: none;
+        font-size: 0.9em;
+        box-sizing: border-box;
+    }
+
+    /* Item text color applied to folder/file names */
+    .folder-info > div:first-child,
+    .folder-subcontents ul li > div:first-child,
+    .folder-subsubcontents ul li > div:first-child {
+        color: var(--item-text-color);
+    }
+
+    /* Calculator width and style */
+    .folder-info .calculator {
+        width: 100%;
+        min-width: 300px;
+    }
+
+    /* Calculator style with variable background and text color */
+    .calculator {
+        background: var(--calculator-bg);
+        color: var(--calculator-text-color);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-top: 6px;
+    }
+    .calculator input[type=number] {
+        width: 70px;
+        margin-left: 6px;
+        font-family: Michroma, monospace;
+        color: var(--calculator-text-color);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+    label.calculator-label {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+        cursor: default;
+    }
+    .price-output {
+        margin-top: 6px;
+        font-weight: bold;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+    }
+    li {
+        margin: 3px 0;
+    }
+
+    /* Flex layout for second and third columns list items */
+    .folder-subcontents ul li,
+    .folder-subsubcontents ul li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+        white-space: nowrap;
+    }
+    .folder-subcontents ul li > div:first-child,
+    .folder-subsubcontents ul li > div:first-child {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .folder-subcontents ul li form.calculator,
+    .folder-subsubcontents ul li form.calculator {
+        flex-grow: 1;
+        min-width: 220px;
+    }
+    .folder-subcontents ul li a,
+    .folder-subsubcontents ul li a {
+        margin-right: 8px;
+    }
+
+    /* Scrollbar styling for webkit */
+    .folder-info::-webkit-scrollbar,
+    .folder-subcontents::-webkit-scrollbar,
+    .folder-subsubcontents::-webkit-scrollbar,
+    .folders-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    .folder-info::-webkit-scrollbar-track,
+    .folder-subcontents::-webkit-scrollbar-track,
+    .folder-subsubcontents::-webkit-scrollbar-track,
+    .folders-container::-webkit-scrollbar-track {
+        background: #ddd;
+    }
+    .folder-info::-webkit-scrollbar-thumb,
+    .folder-subcontents::-webkit-scrollbar-thumb,
+    .folder-subsubcontents::-webkit-scrollbar-thumb,
+    .folders-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 4px;
+    }
+
+    #toggle-settings {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+        background: transparent;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: white;
+        user-select: none;
+    }
+    #settings-bar {
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        width: 280px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 5px;
+        padding: 20px;
+        max-height: 70vh; /* limit vertical height */
+        overflow-y: auto; /* enable vertical scrolling */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: max-height 0.5s ease, padding 0.5s ease;
+        z-index: 1000;
+        color: black;
+        font-family: Michroma, monospace;
+    }
+    #settings-bar label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+    #settings-bar input[type=color], #settings-bar input[type=number] {
+        width: 100%;
+        height: 30px;
+        margin-top: 5px;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+    }
+</style>
 </head>
-<body>
-    <!-- Settings toggle -->
-    <button id="toggle-settings">⚙️</button>
-    <div id="settings-bar">
-    <h3>Settings</h3>
-    <label>Page Background: <input type="color" id="pageBgColor"></label><br><br>
-    <label>Text Color: <input type="color" id="textColor"></label><br><br>
-    <label>Section Background: <input type="color" id="sectionBgColor"></label><br><br>
-    <button id="exit-btn" style="margin-top:12px;width:100%;">⛔ Exit App</button>
-    </div>
+<body class="page-bg">
 
+<h1>Local Folder Analyzer</h1>
 
-    <h1>Local Folder Analyzer</h1>
-    <div class="top-bar">
-        <form method="GET" action="/local">
-            <label>Root folder:
-                <input name="root" value="{{ root or '' }}" size="60" required>
-            </label>
-            <input type="hidden" name="folder" value="{{ current_folder or '' }}">
-            
-            <button type="submit">Analyze</button>
-        </form>
-        <div class="folder-nav">
-            {% if current_folder %}
-                <b>Current:</b> /{{ current_folder }}
-                {# Show go up link unless at root #}
-                {% set upfolder = current_folder.rsplit('/', 1)[0] if '/' in current_folder else '' %}
-                (<a href="/local?root={{ root|urlencode }}&folder={{ upfolder|urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}">⬅️ Up</a>)
+<div class="top-bar">
+    <form method="GET" action="/local" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <label>
+            Root folder:
+            <input type="text" name="root" value="{{ root or '' }}" size="60" required />
+        </label>
+        <input type="hidden" name="folder" value="{{ folder if folder else (col1_contents[0].rel_path if col1_contents else '') }}" />
+        <input type="hidden" name="subfolder" value="{{ subfolder or '' }}" />
+        <button type="submit">Analyze</button>
+    </form>
+
+    
+</div>
+
+{% if error %}
+    <p style="color:red;">{{ error }}</p>
+{% endif %}
+
+{% if col1_contents %}
+<div class="folders-container" role="main" aria-label="All folders as grid rows">
+    {% for folder_item in col1_contents %}
+    <div class="folder-row" data-folder="{{ folder_item.rel_path }}">
+        <!-- 1st col: folder info + calculator -->
+        <div class="folder-info" tabindex="0" aria-label="Folder {{ folder_item.name }} info and calculator">
+            <div>
+                📁
+                <a href="/local?root={{ root|urlencode }}&folder={{ folder_item.rel_path|urlencode }}&subfolder="
+                   aria-current="{{ 'true' if folder == folder_item.rel_path else 'false' }}">{{ folder_item.name }}</a>
+                <small>({{ folder_item.total_videos }} video{{ 's' if folder_item.total_videos != 1 else '' }}, {{ folder_item.total_seconds // 60 }}m {{ folder_item.total_seconds % 60 }}s)</small>
+            </div>
+
+            <form class="calculator" onsubmit="return false;" aria-label="Calculator for {{ folder_item.name }}">
+                <label class="calculator-label">
+                    Price via video count:
+                    <input type="number" min="0" step="0.01" class="videos-price"
+                           data-videos="{{ folder_item.total_videos if folder_item.total_videos is defined else 0 }}" value="0" />
+                </label>
+                <div aria-live="polite" class="videos-price-display price-output"></div>
+
+                <label class="calculator-label">
+                    Price via total minutes:
+                    <input type="number" min="0" step="0.01" class="minutes-price"
+                           data-minutes="{{ folder_item.total_seconds if folder_item.total_seconds is defined else 0 }}" value="0" />
+                </label>
+                <div aria-live="polite" class="minutes-price-display price-output"></div>
+
+                
+            </form>
+        </div>
+
+        <!-- 2nd col: contents of first-level folder with calculators -->
+        <div class="folder-subcontents" aria-label="Subfolder contents for {{ folder_item.name }}" tabindex="0">
+            {% set current_folder = folder_item.rel_path %}
+            {% set col2_for_row = get_folder_contents_obj(current_folder) %}
+            {% if col2_for_row %}
+            <ul>
+                {% for item in col2_for_row %}
+                <li>
+                    <div>
+                        {% if item.type == 'folder' %}
+                            📁
+                            <a href="?root={{ root|urlencode }}&folder={{ current_folder|urlencode }}&subfolder={{ item.name|urlencode }}" class="subfolder-link" aria-label="Select subfolder {{ item.name }}">{{ item.name }}</a>
+                        {% elif item.type == 'file' %}
+                            🎬 {{ item.name }}
+                        {% endif %}
+                    </div>
+                    {% if item.type == 'folder' %}
+                    <form class="calculator" onsubmit="return false;" aria-label="Calculator for {{ item.name }}">
+                        <label class="calculator-label">
+                            Price via video count:
+                            <input type="number" min="0" step="0.01" class="videos-price"
+                                   data-videos="{{ item.total_videos if item.total_videos is defined else 0 }}" value="0" />
+                        </label>
+                        <div aria-live="polite" class="videos-price-display price-output"></div>
+
+                        <label class="calculator-label">
+                            Price via total minutes:
+                            <input type="number" min="0" step="0.01" class="minutes-price"
+                                   data-minutes="{{ item.total_seconds if item.total_seconds is defined else 0 }}" value="0" />
+                        </label>
+                        <div aria-live="polite" class="minutes-price-display price-output"></div>
+
+                       
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <em>(No contents)</em>
+            {% endif %}
+        </div>
+
+        <!-- 3rd col: contents of selected subfolder with calculators -->
+        <div class="folder-subsubcontents" aria-label="Contents of selected subfolder inside {{ folder_item.name }}" tabindex="0">
+            {% if folder_item.rel_path == folder and subfolder %}
+                {% set combined_path = folder + '/' + subfolder %}
+                {% set col3_for_row = get_folder_contents_obj(combined_path) %}
+                {% if col3_for_row %}
+                <ul>
+                    {% for item in col3_for_row %}
+                    <li>
+                        <div>
+                            {% if item.type == 'folder' %}
+                                📁 {{ item.name }}
+                            {% elif item.type == 'file' %}
+                                🎬 {{ item.name }}
+                            {% endif %}
+                        </div>
+                        {% if item.type == 'folder' %}
+                        <form class="calculator" onsubmit="return false;" aria-label="Calculator for {{ item.name }}">
+                            <label class="calculator-label">
+                                Price via video count:
+                                <input type="number" min="0" step="0.01" class="videos-price"
+                                       data-videos="{{ item.total_videos if item.total_videos is defined else 0 }}" value="0" />
+                            </label>
+                            <div aria-live="polite" class="videos-price-display price-output"></div>
+
+                            <label class="calculator-label">
+                                Price via total minutes:
+                                <input type="number" min="0" step="0.01" class="minutes-price"
+                                       data-minutes="{{ item.total_seconds if item.total_seconds is defined else 0 }}" value="0" />
+                            </label>
+                            <div aria-live="polite" class="minutes-price-display price-output"></div>
+
+                            
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <em>(No contents)</em>
+                {% endif %}
+            {% else %}
+                <em>(Select a subfolder in second column)</em>
             {% endif %}
         </div>
     </div>
+    {% endfor %}
+</div>
+{% else %}
+    <p>No folder or file contents found for this root path.</p>
+{% endif %}
 
-    {% if error %}
-        <p style="color:red;">{{ error }}</p>
-    {% endif %}
+<button id="toggle-settings" aria-expanded="false" aria-controls="settings-bar" title="Toggle Settings">⚙️</button>
 
-    {% if columns %}
-        <div style="overflow:auto; margin-top: 30px;">
-            {% for col in columns %}
-            <div class="col">
-                {# Only show calculator for folder columns except root #}
-                {% if not loop.first %}
-                    {% set folder_vcount = 0 %}
-                    {% set folder_seconds = 0 %}
-                    {% for item in col %}
-                        {% if item.type == 'file' %}
-                            {% set folder_vcount = folder_vcount + 1 %}
-                            {% set folder_seconds = folder_seconds + item.seconds %}
-                        {% endif %}
-                    {% endfor %}
-                    {% set folder_minutes = (folder_seconds // 60) %}
-                {% endif %}
+<aside id="settings-bar" role="region" aria-label="Settings panel">
+    <label for="pageBgColor">Page Background:</label>
+    <input type="color" id="pageBgColor" value="#051629" aria-label="Page Background Color" />
 
-                {% for item in col %}
-                    {% if item.type == 'folder' %}
-                        <div style="margin-bottom: 1em;">
-                          <span class="icon">📁</span>
-                          <a href="/local?root={{ root|urlencode }}&folder={{ item.rel_path|urlencode }}&video_price={{ video_price }}&minute_price={{ minute_price }}" style="font-family: inherit; color: inherit;">
-                              {{ item.name }}
-                          </a><br>
-                          {{ item.count }} items{% if item.modified %} — {{ item.modified }}{% endif %}
+    <label for="col1BgColor">First Column Background:</label>
+    <input type="color" id="col1BgColor" value="#f0f0f0cc" aria-label="First Column Background Color" />
 
-                          {# Calculator for this folder #}
-                          {% set folder_minutes = (item.total_seconds // 60) %}
-                          <div style="
-                              margin-left: 20px;
-                              font-family: inherit;
-                              color: inherit;
-                              font-size: 0.9em;
-                              margin-top: 0.3em;">
-                            Videos: {{ item.total_videos }}<br>
-                            Minutes: {{ folder_minutes }}<br>
-                            Video Price: <input 
-                                type="number" 
-                                min="0" step="0.01" 
-                                value="{{ video_price }}" 
-                                class="folder-video-price" 
-                                style="width: 60px;"
-                            > $<br>
-                            Minute Price: <input 
-                                type="number" 
-                                min="0" step="0.01" 
-                                value="{{ minute_price }}" 
-                                class="folder-minute-price" 
-                                style="width: 60px;"
-                            > $<br>
-                            <div>
-                              Total Video Price: <span class="total-video-price">{{ (item.total_videos * video_price)|round(2) }}</span> $<br>
-                              Total Minute Price: <span class="total-minute-price">{{ (folder_minutes * minute_price)|round(2) }}</span> $
-                            </div>
-                          </div>
-                        </div>
-                    {% elif item.type == 'file' %}
-                        <div class="file">
-                            🎬 {{ item.name }} — {{ item.duration }}{% if item.modified %} — {{ item.modified }}{% endif %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    <label for="col2BgColor">Second Column Background:</label>
+    <input type="color" id="col2BgColor" value="#ffffffcc" aria-label="Second Column Background Color" />
+
+    <label for="col3BgColor">Third Column Background:</label>
+    <input type="color" id="col3BgColor" value="#ffffffcc" aria-label="Third Column Background Color" />
+
+    <label for="textColor">Text Color (Global):</label>
+    <input type="color" id="textColor" value="#ffffff" aria-label="Global Text Color" />
+
+    <label for="itemTextColor">Item Text Color (Folders/Files):</label>
+    <input type="color" id="itemTextColor" value="#000000" aria-label="Item Text Color" />
+
+    <label for="calculatorBgColor">Calculator Background Color:</label>
+    <input type="color" id="calculatorBgColor" value="#ffffff" aria-label="Calculator Background Color" />
+
+    <label for="calculatorTextColor">Calculator Text Color:</label>
+    <input type="color" id="calculatorTextColor" value="#000000" aria-label="Calculator Text Color" />
+</aside>
 
 <script>
+(function(){
+    function updateCalc(container){
+        const videosInput = container.querySelector('.videos-price');
+        const minutesInput = container.querySelector('.minutes-price');
+        if(!videosInput || !minutesInput) return;
+
+        const videosNum = parseInt(videosInput.dataset.videos) || 0;
+        const totalSeconds = parseInt(minutesInput.dataset.minutes) || 0;
+
+        const pricePerVideo = parseFloat(videosInput.value) || 0;
+        const pricePerMinute = parseFloat(minutesInput.value) || 0;
+
+        const videosPrice = videosNum * pricePerVideo;
+        const minutesPrice = totalSeconds * pricePerMinute;
+        const total = videosPrice + minutesPrice;
+
+        let videosDisplay = container.querySelector('.videos-price-display');
+        let minutesDisplay = container.querySelector('.minutes-price-display');
+        const totalDisplay = container.querySelector('.total-price');
+
+        if(videosDisplay) videosDisplay.textContent = `${videosNum} videos × ${pricePerVideo.toFixed(2)} = ${videosPrice.toFixed(2)}`;
+
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        if(minutesDisplay) minutesDisplay.textContent = `${mins}m ${secs}s × ${pricePerMinute.toFixed(2)} = ${minutesPrice.toFixed(2)}`;
+
+        if(totalDisplay) totalDisplay.textContent = `Total: ${total.toFixed(2)}`;
+    }
+
+    function setupCalculators(){
+        document.querySelectorAll('.calculator').forEach(form => {
+            form.querySelectorAll('.videos-price, .minutes-price').forEach(input => {
+                input.addEventListener('input', () => updateCalc(form));
+            });
+            updateCalc(form);
+        });
+    }
+
     const toggleBtn = document.getElementById('toggle-settings');
     const settingsBar = document.getElementById('settings-bar');
 
     toggleBtn.addEventListener('click', () => {
-        if (settingsBar.style.maxHeight === '0px' || !settingsBar.style.maxHeight) {
-            settingsBar.style.maxHeight = '500px';
-            settingsBar.style.padding = '20px';
-        } else {
+        const isOpen = settingsBar.style.maxHeight && settingsBar.style.maxHeight !== '0px';
+        if (isOpen) {
             settingsBar.style.maxHeight = '0';
             settingsBar.style.padding = '0 20px';
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        } else {
+            settingsBar.style.maxHeight = '70vh';
+            settingsBar.style.padding = '20px';
+            toggleBtn.setAttribute('aria-expanded', 'true');
         }
     });
 
     const pageBgInput = document.getElementById('pageBgColor');
+    const col1BgInput = document.getElementById('col1BgColor');
+    const col2BgInput = document.getElementById('col2BgColor');
+    const col3BgInput = document.getElementById('col3BgColor');
     const textColorInput = document.getElementById('textColor');
-    const sectionBgInput = document.getElementById('sectionBgColor');
+    const itemTextColorInput = document.getElementById('itemTextColor');
+    const calculatorBgInput = document.getElementById('calculatorBgColor');
+    const calculatorTextColorInput = document.getElementById('calculatorTextColor');
 
     function loadColors() {
         const savedPageBg = localStorage.getItem('pageBgColor') || '#051629';
+        const savedCol1Bg = localStorage.getItem('col1BgColor') || '#f0f0f0cc';
+        const savedCol2Bg = localStorage.getItem('col2BgColor') || '#ffffffcc';
+        const savedCol3Bg = localStorage.getItem('col3BgColor') || '#ffffffcc';
         const savedTextColor = localStorage.getItem('textColor') || '#ffffff';
-        const savedSectionBg = localStorage.getItem('sectionBgColor') || '#ffffff';
 
         pageBgInput.value = savedPageBg;
+        col1BgInput.value = savedCol1Bg;
+        col2BgInput.value = savedCol2Bg;
+        col3BgInput.value = savedCol3Bg;
         textColorInput.value = savedTextColor;
-        sectionBgInput.value = savedSectionBg;
-
-        updateColors();
     }
 
     function saveColors() {
         localStorage.setItem('pageBgColor', pageBgInput.value);
+        localStorage.setItem('col1BgColor', col1BgInput.value);
+        localStorage.setItem('col2BgColor', col2BgInput.value);
+        localStorage.setItem('col3BgColor', col3BgInput.value);
         localStorage.setItem('textColor', textColorInput.value);
-        localStorage.setItem('sectionBgColor', sectionBgInput.value);
     }
 
     function updateColors() {
-        document.body.style.backgroundColor = pageBgInput.value;
-        document.body.style.color = textColorInput.value;
-
-        document.querySelectorAll('.col, #settings-bar').forEach(el => {
-            el.style.backgroundColor = sectionBgInput.value + 'CC'; // 80% opacity
-            el.style.color = textColorInput.value;
-        });
-
+        document.documentElement.style.setProperty('--page-bg', pageBgInput.value);
+        document.documentElement.style.setProperty('--col1-bg', col1BgInput.value);
+        document.documentElement.style.setProperty('--col2-bg', col2BgInput.value);
+        document.documentElement.style.setProperty('--col3-bg', col3BgInput.value);
+        document.documentElement.style.setProperty('--text-color', textColorInput.value);
+        // Keep column text color as black for contrast:
+        document.documentElement.style.setProperty('--text-color-column', 'black');
         saveColors();
     }
 
-    pageBgInput.addEventListener('input', updateColors);
-    textColorInput.addEventListener('input', updateColors);
-    sectionBgInput.addEventListener('input', updateColors);
+    function loadCalcColors() {
+        const savedItemTextColor = localStorage.getItem('itemTextColor') || '#000000';
+        const savedCalcBg = localStorage.getItem('calculatorBgColor') || '#ffffff';
+        const savedCalcTextColor = localStorage.getItem('calculatorTextColor') || '#000000';
 
-    window.addEventListener('DOMContentLoaded', loadColors);
-</script>
-<script>
-  // When inputs change, update total prices accordingly
-  document.querySelectorAll('.col').forEach(col => {
-    col.querySelectorAll('div > input.folder-video-price, div > input.folder-minute-price').forEach(input => {
-      input.addEventListener('input', () => {
-        // find the containing calculator div
-        const calculatorDiv = input.parentElement;
+        itemTextColorInput.value = savedItemTextColor;
+        calculatorBgInput.value = savedCalcBg;
+        calculatorTextColorInput.value = savedCalcTextColor;
 
-        // Get video count and minutes from the DOM text
-        const videosText = calculatorDiv.childNodes[0].textContent || "";
-        const minutesText = calculatorDiv.childNodes[2].textContent || "";
-
-        // Extract numbers from these strings
-        const videoCount = parseInt(videosText.replace(/[^0-9]/g, '')) || 0;
-        const minutes = parseInt(minutesText.replace(/[^0-9]/g, '')) || 0;
-
-        // Read price values from inputs exactly inside this div
-        const videoPriceInput = calculatorDiv.querySelector('input.folder-video-price');
-        const minutePriceInput = calculatorDiv.querySelector('input.folder-minute-price');
-
-        const videoPrice = parseFloat(videoPriceInput.value) || 0;
-        const minutePrice = parseFloat(minutePriceInput.value) || 0;
-
-        // Calculate totals
-        const totalVideoPrice = (videoCount * videoPrice).toFixed(2);
-        const totalMinutePrice = (minutes * minutePrice).toFixed(2);
-
-        calculatorDiv.querySelector('.total-video-price').textContent = totalVideoPrice;
-        calculatorDiv.querySelector('.total-minute-price').textContent = totalMinutePrice;
-      });
-    });
-  });
-</script>
-<script>
-document.getElementById('exit-btn').onclick = function() {
-    if (confirm("Really shut down the Folder Analyzer app?")) {
-        fetch('/shutdown', {method: 'POST'})
-        .then(() => { window.close(); });
+        updateCalcColors();
     }
-};
+
+    function saveCalcColors() {
+        localStorage.setItem('itemTextColor', itemTextColorInput.value);
+        localStorage.setItem('calculatorBgColor', calculatorBgInput.value);
+        localStorage.setItem('calculatorTextColor', calculatorTextColorInput.value);
+    }
+
+    function updateCalcColors() {
+        document.documentElement.style.setProperty('--item-text-color', itemTextColorInput.value);
+        document.documentElement.style.setProperty('--calculator-bg', calculatorBgInput.value);
+        document.documentElement.style.setProperty('--calculator-text-color', calculatorTextColorInput.value);
+        saveCalcColors();
+    }
+
+    pageBgInput.addEventListener('input', updateColors);
+    col1BgInput.addEventListener('input', updateColors);
+    col2BgInput.addEventListener('input', updateColors);
+    col3BgInput.addEventListener('input', updateColors);
+    textColorInput.addEventListener('input', updateColors);
+
+    itemTextColorInput.addEventListener('input', updateCalcColors);
+    calculatorBgInput.addEventListener('input', updateCalcColors);
+    calculatorTextColorInput.addEventListener('input', updateCalcColors);
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadColors();
+        updateColors();
+        loadCalcColors();
+        setupCalculators();
+    });
+})();
 </script>
+
 </body>
 </html>
